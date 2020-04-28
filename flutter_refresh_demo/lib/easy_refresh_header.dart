@@ -8,12 +8,14 @@ class EasyRefreshHeader extends StatefulWidget {
   final bool refresh;
   final bool willRefresh;
   final Widget child;
+  final double refreshExtent;
 
   EasyRefreshHeader({
     Key key,
     this.refresh = false,
     this.willRefresh = false,
     this.child,
+    this.refreshExtent,
   });
 
   @override
@@ -25,6 +27,7 @@ class _EasyRefreshHeaderState extends State<EasyRefreshHeader> {
   Widget build(BuildContext context) {
     return _EasyRefreshSliverRefresh(
       refresh: widget.refresh,
+      refreshExtent: widget.refreshExtent,
       child: LayoutBuilder(
         builder: (context, layout) {
           return Container(
@@ -36,7 +39,7 @@ class _EasyRefreshHeaderState extends State<EasyRefreshHeader> {
                   right: 0.0,
                   child: widget.child ??
                       Container(
-                        height: 60.0,
+                        height: widget.refreshExtent,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -80,33 +83,43 @@ class _EasyRefreshHeaderState extends State<EasyRefreshHeader> {
 
 class _EasyRefreshSliverRefresh extends SingleChildRenderObjectWidget {
   final bool refresh;
+  final double refreshExtent;
 
   const _EasyRefreshSliverRefresh({
     Key key,
     Widget child,
     this.refresh = false,
+    this.refreshExtent,
   }) : super(key: key, child: child);
 
   @override
   _RenderEasyRefreshSliverRefresh createRenderObject(BuildContext context) {
-    return _RenderEasyRefreshSliverRefresh(refresh: refresh);
+    return _RenderEasyRefreshSliverRefresh(
+      refresh: refresh,
+      refreshExtent: refreshExtent,
+    );
   }
 
   @override
   void updateRenderObject(BuildContext context, _RenderEasyRefreshSliverRefresh renderObject) {
-    renderObject..refresh = refresh;
+    renderObject
+      ..refresh = refresh
+      ..refreshExtent = refreshExtent;
   }
 }
 
 class _RenderEasyRefreshSliverRefresh extends RenderSliverSingleBoxAdapter {
   _RenderEasyRefreshSliverRefresh({
     @required bool refresh,
+    @required double refreshExtent,
     RenderBox item,
   }) {
     this.child = item;
     _refresh = refresh;
+    _refreshExtent = refreshExtent;
   }
 
+  /// 刷新状态
   bool get refresh => _refresh;
   bool _refresh;
   set refresh(bool value) {
@@ -115,11 +128,21 @@ class _RenderEasyRefreshSliverRefresh extends RenderSliverSingleBoxAdapter {
     markNeedsLayout();
   }
 
+  /// child高度
+  double get refreshExtent => _refreshExtent;
+  double _refreshExtent;
+  set refreshExtent(double value) {
+    if (value == _refreshExtent) return;
+    _refreshExtent = value;
+    markNeedsLayout();
+  }
+
   double layoutExtentOffsetCompensation = 0.0;
 
   @override
   void performLayout() {
-    double refreshHeight = _refresh ? 60.0 : 0.0;
+
+    double refreshHeight = _refresh ? _refreshExtent : 0.0;
     double scrollExtent = constraints.overlap < 0.0 ? constraints.overlap.abs() : 0.0;
 
     /// 用来做状态切换缓冲

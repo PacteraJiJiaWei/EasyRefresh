@@ -14,7 +14,7 @@ class EasyRefreshFooter extends StatefulWidget {
     this.load = false,
     this.willLoad = false,
     this.child,
-    this.loadExtent = 60.0,
+    this.loadExtent,
   });
 
   @override
@@ -24,7 +24,7 @@ class EasyRefreshFooter extends StatefulWidget {
 class _EasyRefreshFooterState extends State<EasyRefreshFooter> {
   @override
   Widget build(BuildContext context) {
-    return _EasyRefreshSliverRefresh(
+    return _EasyRefreshSliverLoad(
       load: widget.load,
       loadExtent: widget.loadExtent,
       child: LayoutBuilder(
@@ -70,32 +70,35 @@ class _EasyRefreshFooterState extends State<EasyRefreshFooter> {
   }
 }
 
-class _EasyRefreshSliverRefresh extends SingleChildRenderObjectWidget {
+class _EasyRefreshSliverLoad extends SingleChildRenderObjectWidget {
   final bool load;
   final double loadExtent;
 
-  const _EasyRefreshSliverRefresh({
+  const _EasyRefreshSliverLoad({
     Key key,
     Widget child,
     this.load = false,
-    this.loadExtent = 60.0,
+    this.loadExtent,
   }) : super(key: key, child: child);
 
   @override
-  _RenderEasyRefreshSliverRefresh createRenderObject(BuildContext context) {
-    return _RenderEasyRefreshSliverRefresh(load: load, loadExtent: loadExtent);
+  _RenderEasyRefreshSliverLoad createRenderObject(BuildContext context) {
+    return _RenderEasyRefreshSliverLoad(
+      load: load,
+      loadExtent: loadExtent,
+    );
   }
 
   @override
-  void updateRenderObject(BuildContext context, _RenderEasyRefreshSliverRefresh renderObject) {
+  void updateRenderObject(BuildContext context, _RenderEasyRefreshSliverLoad renderObject) {
     renderObject
       ..load = load
       ..loadExtent = loadExtent;
   }
 }
 
-class _RenderEasyRefreshSliverRefresh extends RenderSliverSingleBoxAdapter {
-  _RenderEasyRefreshSliverRefresh({
+class _RenderEasyRefreshSliverLoad extends RenderSliverSingleBoxAdapter {
+  _RenderEasyRefreshSliverLoad({
     @required bool load,
     @required double loadExtent,
     RenderBox item,
@@ -105,7 +108,7 @@ class _RenderEasyRefreshSliverRefresh extends RenderSliverSingleBoxAdapter {
     _loadExtent = loadExtent;
   }
 
-  /// 是否在加载中
+  /// 加载状态
   bool get load => _load;
   bool _load;
   set load(bool value) {
@@ -127,7 +130,7 @@ class _RenderEasyRefreshSliverRefresh extends RenderSliverSingleBoxAdapter {
   void performLayout() {
     /// 设置滑动时控件的高度
     geometry = SliverGeometry(
-      scrollExtent: _load ? 60.0 : 0.0,
+      scrollExtent: _load ? _loadExtent : 0.0,
       paintOrigin: 0.0,
       paintExtent: constraints.remainingPaintExtent,
       maxPaintExtent: constraints.remainingPaintExtent,
