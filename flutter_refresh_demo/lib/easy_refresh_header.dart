@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:math';
@@ -42,11 +43,13 @@ class _EasyRefreshHeaderState extends State<EasyRefreshHeader> {
                           children: <Widget>[
                             Padding(
                               padding: EdgeInsets.only(right: 10.0),
-                              child: Icon(
-                                widget.refresh
-                                    ? Icons.refresh
-                                    : widget.willRefresh ? Icons.arrow_upward : Icons.arrow_downward,
-                              ),
+                              child: widget.refresh
+                                  ? CupertinoActivityIndicator(
+                                      radius: 12,
+                                    )
+                                  : Icon(
+                                      widget.willRefresh ? Icons.arrow_upward : Icons.arrow_downward,
+                                    ),
                             ),
                             Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -56,7 +59,10 @@ class _EasyRefreshHeaderState extends State<EasyRefreshHeader> {
                                   widget.refresh ? '正在刷新' : widget.willRefresh ? '松手开始刷新' : '下拉开始刷新',
                                   style: TextStyle(fontSize: 16.0, color: Colors.black),
                                 ),
-                                Text('updateTime 9:00',style: TextStyle(fontSize: 14.0, color: Colors.cyan),),
+                                Text(
+                                  'updateTime 9:00',
+                                  style: TextStyle(fontSize: 14.0, color: Colors.cyan),
+                                ),
                               ],
                             ),
                           ],
