@@ -2,17 +2,21 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
+/// 加载状态
+enum LoadState {
+  willLoad,
+  loading,
+  cancelLoad,
+}
+
 class EasyRefreshFooter extends StatefulWidget {
-  /// 是否在加载
-  final bool load;
-  final bool willLoad;
+  final LoadState loadState;
   final Widget child;
   final double loadExtent;
 
   EasyRefreshFooter({
     Key key,
-    this.load = false,
-    this.willLoad = false,
+    this.loadState,
     this.child,
     this.loadExtent,
   });
@@ -25,7 +29,7 @@ class _EasyRefreshFooterState extends State<EasyRefreshFooter> {
   @override
   Widget build(BuildContext context) {
     return _EasyRefreshSliverLoad(
-      load: widget.load,
+      load: widget.loadState == LoadState.loading,
       loadExtent: widget.loadExtent,
       child: LayoutBuilder(
         builder: (context, layout) {
@@ -45,16 +49,20 @@ class _EasyRefreshFooterState extends State<EasyRefreshFooter> {
                           children: <Widget>[
                             Padding(
                               padding: EdgeInsets.only(right: 10.0),
-                              child: widget.load
+                              child: widget.loadState == LoadState.loading
                                   ? CupertinoActivityIndicator(
                                       radius: 12,
                                     )
                                   : Icon(
-                                      widget.willLoad ? Icons.arrow_downward : Icons.arrow_upward,
+                                      widget.loadState == LoadState.willLoad
+                                          ? Icons.arrow_downward
+                                          : Icons.arrow_upward,
                                     ),
                             ),
                             Text(
-                              widget.load ? '正在加载' : widget.willLoad ? '松手开始加载' : '上拉开始加载',
+                              widget.loadState == LoadState.loading
+                                  ? '正在加载'
+                                  : widget.loadState == LoadState.willLoad ? '松手开始加载' : '上拉开始加载',
                               style: TextStyle(fontSize: 16.0, color: Colors.black),
                             ),
                           ],

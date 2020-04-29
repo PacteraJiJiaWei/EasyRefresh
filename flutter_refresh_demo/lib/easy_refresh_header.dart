@@ -3,19 +3,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:math';
 
+/// 刷新状态
+enum RefreshState {
+  willRefresh,
+  refreshing,
+  cancelRefresh,
+}
+
 class EasyRefreshHeader extends StatefulWidget {
-  /// 是否在刷新
-  final bool refresh;
-  final bool willRefresh;
   final Widget child;
   final double refreshExtent;
+  final RefreshState refreshState;
 
   EasyRefreshHeader({
     Key key,
-    this.refresh = false,
-    this.willRefresh = false,
     this.child,
     this.refreshExtent,
+    this.refreshState = RefreshState.cancelRefresh,
   });
 
   @override
@@ -26,7 +30,7 @@ class _EasyRefreshHeaderState extends State<EasyRefreshHeader> {
   @override
   Widget build(BuildContext context) {
     return _EasyRefreshSliverRefresh(
-      refresh: widget.refresh,
+      refresh: widget.refreshState == RefreshState.refreshing,
       refreshExtent: widget.refreshExtent,
       child: LayoutBuilder(
         builder: (context, layout) {
@@ -46,12 +50,14 @@ class _EasyRefreshHeaderState extends State<EasyRefreshHeader> {
                           children: <Widget>[
                             Padding(
                               padding: EdgeInsets.only(right: 10.0),
-                              child: widget.refresh
+                              child: widget.refreshState == RefreshState.refreshing
                                   ? CupertinoActivityIndicator(
                                       radius: 12,
                                     )
                                   : Icon(
-                                      widget.willRefresh ? Icons.arrow_upward : Icons.arrow_downward,
+                                      widget.refreshState == RefreshState.willRefresh
+                                          ? Icons.arrow_upward
+                                          : Icons.arrow_downward,
                                     ),
                             ),
                             Column(
@@ -59,7 +65,9 @@ class _EasyRefreshHeaderState extends State<EasyRefreshHeader> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 Text(
-                                  widget.refresh ? '正在刷新' : widget.willRefresh ? '松手开始刷新' : '下拉开始刷新',
+                                  widget.refreshState == RefreshState.refreshing
+                                      ? '正在刷新'
+                                      : widget.refreshState == RefreshState.willRefresh ? '松手开始刷新' : '下拉开始刷新',
                                   style: TextStyle(fontSize: 16.0, color: Colors.black),
                                 ),
                                 Text(
@@ -141,7 +149,6 @@ class _RenderEasyRefreshSliverRefresh extends RenderSliverSingleBoxAdapter {
 
   @override
   void performLayout() {
-
     double refreshHeight = _refresh ? _refreshExtent : 0.0;
     double scrollExtent = constraints.overlap < 0.0 ? constraints.overlap.abs() : 0.0;
 

@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'easy_refresh_footer.dart';
 import 'easy_refresh_header.dart';
+export 'easy_refresh_footer.dart';
+export 'easy_refresh_header.dart';
 
 typedef EasyRefreshCompere = Function(BuildContext context);
-typedef EasyRefreshItem = Widget Function(BuildContext context, EasyRefreshState state);
+typedef EasyRefreshHeaderItem = Widget Function(BuildContext context, RefreshState state);
+typedef EasyRefreshFooterItem = Widget Function(BuildContext context, LoadState state);
 typedef EasyRefreshSliverItem = Widget Function(BuildContext context, int index);
-
-enum EasyRefreshState {
-  will,
-  start,
-  cancel,
-}
 
 class EasyRefresh extends StatefulWidget {
   /// 下拉刷新回调
@@ -20,7 +17,7 @@ class EasyRefresh extends StatefulWidget {
   final double refreshExtent;
 
   /// 下拉刷新自定义视图
-  final EasyRefreshItem header;
+  final EasyRefreshHeaderItem header;
 
   /// 上拉加载回调
   final EasyRefreshCompere load;
@@ -29,7 +26,7 @@ class EasyRefresh extends StatefulWidget {
   final double loadExtent;
 
   /// 上拉加载自定义视图
-  final EasyRefreshItem footer;
+  final EasyRefreshFooterItem footer;
 
   /// 刷新listItem
   final EasyRefreshSliverItem item;
@@ -61,16 +58,12 @@ class EasyRefresh extends StatefulWidget {
 class _EasyRefreshState extends State<EasyRefresh> {
   // 滑动控制器
   ScrollController controller;
-  // 是否开始下拉刷新
-  bool refresh = false;
-  // 是否是将要刷新状态
-  bool willRefresh = false;
-  // 是否开始上拉加载
-  bool load = false;
-  // 是否是将要上拉加载状态
-  bool willLoad = false;
   // 可滑动的最大距离
   double scrollMaxExtent;
+  // 下拉刷新state
+  RefreshState refreshState = RefreshState.cancelRefresh;
+  // 上拉加载state
+  LoadState loadState = LoadState.cancelLoad;
 
   @override
   void initState() {
@@ -78,49 +71,54 @@ class _EasyRefreshState extends State<EasyRefresh> {
     super.initState();
   }
 
-  upDateRefresh(BuildContext context) {
+  /// 手指离开屏幕时调用
+  startRefresh(BuildContext context) {
+    if (refreshState == RefreshState.refreshing) return; // 防止多次点击
     if (controller.offset > -widget.refreshExtent) {
-      if (refresh) setState(() => refresh = false);
+      setState(() => refreshState = RefreshState.cancelRefresh);
     } else {
-      if (!refresh) {
-        setState(() => refresh = true);
-        if (widget.refresh != null) widget.refresh(context);
-      }
+      setState(() => refreshState = RefreshState.refreshing);
+      if (widget.refresh != null) widget.refresh(context);
     }
   }
 
+  /// 停止刷新回调
   stopRefresh() {
-    setState(() => refresh = false);
+    setState(() => refreshState = RefreshState.cancelRefresh);
   }
 
-  updateRefreshState() {
+  /// 滑动时更新state调用
+  updateRefresh() {
+    if (refreshState == RefreshState.refreshing) return; // 如果在刷新中不改变刷新状态
     if (controller.offset > -widget.refreshExtent) {
-      if (willRefresh) setState(() => willRefresh = false);
+      if (refreshState == RefreshState.willRefresh) setState(() => refreshState = RefreshState.cancelRefresh);
     } else {
-      if (!willRefresh) setState(() => willRefresh = true);
+      if (refreshState == RefreshState.cancelRefresh) setState(() => refreshState = RefreshState.willRefresh);
     }
   }
 
-  upDateLoad(BuildContext context) {
+  /// 手指离开屏幕时调用
+  startLoad(BuildContext context) {
+    if (loadState == LoadState.loading) return; // 防止多次点击
     if (controller.offset < scrollMaxExtent + widget.loadExtent) {
-      if (load) setState(() => load = false);
+      setState(() => loadState == LoadState.cancelLoad);
     } else {
-      if (!load) {
-        setState(() => load = true);
-        if (widget.load != null) widget.load(context);
-      }
+      setState(() => loadState = LoadState.loading);
+      if (widget.load != null) widget.load(context);
     }
   }
 
+  /// 停止加载回调
   stopLoad() {
-    setState(() => load = false);
+    setState(() => loadState = LoadState.cancelLoad);
   }
 
-  updateLoadState() {
+  /// 滑动时更新state调用
+  updateLoad() {
     if (controller.offset < scrollMaxExtent + widget.loadExtent) {
-      if (willLoad) setState(() => willLoad = false);
+      if (loadState == LoadState.willLoad) setState(() => loadState = LoadState.cancelLoad);
     } else {
-      if (!willLoad) setState(() => willLoad = true);
+      if (loadState == LoadState.cancelLoad) setState(() => loadState = LoadState.willLoad);
     }
   }
 
@@ -131,8 +129,8 @@ class _EasyRefreshState extends State<EasyRefresh> {
         return Listener(
           onPointerUp: (event) {
             // 监听手指抬起时
-            if (widget.refresh != null) upDateRefresh(context);
-            if (widget.load != null) upDateLoad(context);
+            if (widget.refresh != null) startRefresh(context);
+            if (widget.load != null) startLoad(context);
           },
           child: NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification notification) {
@@ -141,24 +139,22 @@ class _EasyRefreshState extends State<EasyRefresh> {
                 scrollMaxExtent = notification.metrics.maxScrollExtent;
               } else if (notification is ScrollUpdateNotification) {
                 // 监听滑动中状态变化
-                if (widget.refresh != null) updateRefreshState();
-                if (widget.load != null) updateLoadState();
+                if (widget.refresh != null) updateRefresh();
+                if (widget.load != null) updateLoad();
               }
               return true;
             },
             child: CustomScrollView(
+              physics: AlwaysScrollableScrollPhysics(),
               controller: controller,
               slivers: [
                 EasyRefreshHeader(
-                  refresh: refresh,
-                  willRefresh: willRefresh,
+                  refreshState: refreshState,
                   refreshExtent: widget.refreshExtent,
                   child: widget.header != null
                       ? widget.header(
                           context,
-                          refresh
-                              ? EasyRefreshState.start
-                              : willRefresh ? EasyRefreshState.will : EasyRefreshState.cancel,
+                          refreshState,
                         )
                       : null,
                 ),
@@ -174,22 +170,16 @@ class _EasyRefreshState extends State<EasyRefresh> {
                   ),
                 ),
                 EasyRefreshFooter(
-                  load: load,
-                  willLoad: willLoad,
+                  loadState: loadState,
                   loadExtent: widget.loadExtent,
                   child: widget.footer != null
                       ? widget.footer(
                           context,
-                          refresh
-                              ? EasyRefreshState.start
-                              : willRefresh ? EasyRefreshState.will : EasyRefreshState.cancel,
+                          loadState,
                         )
                       : null,
                 ),
               ],
-              reverse: false,
-              primary: false,
-              shrinkWrap: false,
             ),
           ),
         );
