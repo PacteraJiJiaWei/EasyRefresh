@@ -77,6 +77,14 @@ class _EasyRefreshState extends State<EasyRefresh> {
     super.initState();
   }
 
+  @override
+  void dispose() {
+    if (controller != null) controller.dispose();
+    if (headerOffsetNotifier != null) headerOffsetNotifier.dispose();
+    if (footerOffsetNotifier != null) footerOffsetNotifier.dispose();
+    super.dispose();
+  }
+
   /// 手指离开屏幕时调用
   startRefresh(BuildContext context) {
     if (refreshState == RefreshState.refreshing) return; // 防止多次点击
