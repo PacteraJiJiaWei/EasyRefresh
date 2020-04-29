@@ -10,16 +10,20 @@ enum RefreshState {
   cancelRefresh,
 }
 
+typedef EasyRefreshAnimationHeader = Widget Function(BuildContext context, double offset);
+
 class EasyRefreshHeader extends StatefulWidget {
-  final Widget child;
+  final EasyRefreshAnimationHeader child;
   final double refreshExtent;
   final RefreshState refreshState;
+  final ValueNotifier<double> offsetNotifier;
 
   EasyRefreshHeader({
     Key key,
     this.child,
     this.refreshExtent,
     this.refreshState = RefreshState.cancelRefresh,
+    this.offsetNotifier,
   });
 
   @override
@@ -27,6 +31,9 @@ class EasyRefreshHeader extends StatefulWidget {
 }
 
 class _EasyRefreshHeaderState extends State<EasyRefreshHeader> {
+  double currentOffset;
+  Widget currentHeader;
+
   @override
   Widget build(BuildContext context) {
     return _EasyRefreshSliverRefresh(
@@ -41,44 +48,56 @@ class _EasyRefreshHeaderState extends State<EasyRefreshHeader> {
                   bottom: 0.0,
                   left: 0.0,
                   right: 0.0,
-                  child: widget.child ??
-                      Container(
-                        height: widget.refreshExtent,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: <Widget>[
-                            Padding(
-                              padding: EdgeInsets.only(right: 10.0),
-                              child: widget.refreshState == RefreshState.refreshing
-                                  ? CupertinoActivityIndicator(
-                                      radius: 12,
-                                    )
-                                  : Icon(
-                                      widget.refreshState == RefreshState.willRefresh
-                                          ? Icons.arrow_upward
-                                          : Icons.arrow_downward,
-                                    ),
-                            ),
-                            Column(
+                  child: ValueListenableBuilder(
+                      valueListenable: widget.offsetNotifier,
+                      builder: (context, value, child) {
+                        if (currentHeader == null) currentHeader = widget.child(context, value);
+                        if (currentHeader is SizedBox) {
+                          return Container(
+                            height: widget.refreshExtent,
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: <Widget>[
-                                Text(
-                                  widget.refreshState == RefreshState.refreshing
-                                      ? '正在刷新'
-                                      : widget.refreshState == RefreshState.willRefresh ? '松手开始刷新' : '下拉开始刷新',
-                                  style: TextStyle(fontSize: 16.0, color: Colors.black),
+                                Padding(
+                                  padding: EdgeInsets.only(right: 10.0),
+                                  child: widget.refreshState == RefreshState.refreshing
+                                      ? CupertinoActivityIndicator(
+                                    radius: 12,
+                                  )
+                                      : Icon(
+                                    widget.refreshState == RefreshState.willRefresh
+                                        ? Icons.arrow_upward
+                                        : Icons.arrow_downward,
+                                  ),
                                 ),
-                                Text(
-                                  'updateTime 9:00',
-                                  style: TextStyle(fontSize: 14.0, color: Colors.cyan),
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    Text(
+                                      widget.refreshState == RefreshState.refreshing
+                                          ? '正在刷新'
+                                          : widget.refreshState == RefreshState.willRefresh ? '松手开始刷新' : '下拉开始刷新',
+                                      style: TextStyle(fontSize: 16.0, color: Colors.black),
+                                    ),
+                                    Text(
+                                      'updateTime 9:00',
+                                      style: TextStyle(fontSize: 14.0, color: Colors.cyan),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                      ),
+                          );
+                        } else {
+                          if (currentOffset != value) {
+                            currentOffset = value;
+                            currentHeader = widget.child(context, value);
+                          }
+                          return currentHeader;
+                        }
+                      }),
                 )
               ],
             ),

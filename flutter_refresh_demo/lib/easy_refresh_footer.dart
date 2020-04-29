@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -9,16 +11,22 @@ enum LoadState {
   cancelLoad,
 }
 
+typedef EasyRefreshAnimationFooter = Widget Function(BuildContext context, double offset);
+
 class EasyRefreshFooter extends StatefulWidget {
-  final LoadState loadState;
-  final Widget child;
+  final EasyRefreshAnimationFooter child;
   final double loadExtent;
+  final LoadState loadState;
+  final ValueNotifier<double> offsetNotifier;
+  final double scrollMaxExtent;
 
   EasyRefreshFooter({
     Key key,
-    this.loadState,
     this.child,
     this.loadExtent,
+    this.loadState,
+    this.offsetNotifier,
+    this.scrollMaxExtent,
   });
 
   @override
@@ -26,6 +34,9 @@ class EasyRefreshFooter extends StatefulWidget {
 }
 
 class _EasyRefreshFooterState extends State<EasyRefreshFooter> {
+  double currentOffset;
+  Widget currentFooter;
+
   @override
   Widget build(BuildContext context) {
     return _EasyRefreshSliverLoad(
@@ -40,34 +51,46 @@ class _EasyRefreshFooterState extends State<EasyRefreshFooter> {
                   top: 0.0,
                   left: 0.0,
                   right: 0.0,
-                  child: widget.child ??
-                      Container(
-                        height: widget.loadExtent,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: <Widget>[
-                            Padding(
-                              padding: EdgeInsets.only(right: 10.0),
-                              child: widget.loadState == LoadState.loading
-                                  ? CupertinoActivityIndicator(
-                                      radius: 12,
-                                    )
-                                  : Icon(
-                                      widget.loadState == LoadState.willLoad
-                                          ? Icons.arrow_downward
-                                          : Icons.arrow_upward,
-                                    ),
+                  child: ValueListenableBuilder(
+                      valueListenable: widget.offsetNotifier,
+                      builder: (context, value, child) {
+                        if (currentFooter == null) currentFooter = widget.child(context, value);
+                        if (currentFooter is SizedBox) {
+                          return Container(
+                            height: widget.loadExtent,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: <Widget>[
+                                Padding(
+                                  padding: EdgeInsets.only(right: 10.0),
+                                  child: widget.loadState == LoadState.loading
+                                      ? CupertinoActivityIndicator(
+                                          radius: 12,
+                                        )
+                                      : Icon(
+                                          widget.loadState == LoadState.willLoad
+                                              ? Icons.arrow_downward
+                                              : Icons.arrow_upward,
+                                        ),
+                                ),
+                                Text(
+                                  widget.loadState == LoadState.loading
+                                      ? '正在加载'
+                                      : widget.loadState == LoadState.willLoad ? '松手开始加载' : '上拉开始加载',
+                                  style: TextStyle(fontSize: 16.0, color: Colors.black),
+                                ),
+                              ],
                             ),
-                            Text(
-                              widget.loadState == LoadState.loading
-                                  ? '正在加载'
-                                  : widget.loadState == LoadState.willLoad ? '松手开始加载' : '上拉开始加载',
-                              style: TextStyle(fontSize: 16.0, color: Colors.black),
-                            ),
-                          ],
-                        ),
-                      ),
+                          );
+                        } else {
+                          if (currentOffset != value) {
+                            currentOffset = value;
+                            currentFooter = widget.child(context, value);
+                          }
+                          return currentFooter;
+                        }
+                      }),
                 )
               ],
             ),

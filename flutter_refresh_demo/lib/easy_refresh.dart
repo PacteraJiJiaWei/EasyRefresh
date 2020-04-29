@@ -5,8 +5,8 @@ export 'easy_refresh_footer.dart';
 export 'easy_refresh_header.dart';
 
 typedef EasyRefreshCompere = Function(BuildContext context);
-typedef EasyRefreshHeaderItem = Widget Function(BuildContext context, RefreshState state);
-typedef EasyRefreshFooterItem = Widget Function(BuildContext context, LoadState state);
+typedef EasyRefreshHeaderItem = Widget Function(BuildContext context, RefreshState state, double offset);
+typedef EasyRefreshFooterItem = Widget Function(BuildContext context, LoadState state, double offset);
 typedef EasyRefreshSliverItem = Widget Function(BuildContext context, int index);
 
 class EasyRefresh extends StatefulWidget {
@@ -59,15 +59,21 @@ class _EasyRefreshState extends State<EasyRefresh> {
   // 滑动控制器
   ScrollController controller;
   // 可滑动的最大距离
-  double scrollMaxExtent;
+  double scrollMaxExtent = 0.0;
   // 下拉刷新state
   RefreshState refreshState = RefreshState.cancelRefresh;
   // 上拉加载state
   LoadState loadState = LoadState.cancelLoad;
+  // header监听滑动距离
+  ValueNotifier<double> headerOffsetNotifier;
+  // footer监听滑动距离
+  ValueNotifier<double> footerOffsetNotifier;
 
   @override
   void initState() {
     controller = ScrollController();
+    headerOffsetNotifier = ValueNotifier<double>(0.0);
+    footerOffsetNotifier = ValueNotifier<double>(0.0);
     super.initState();
   }
 
@@ -129,8 +135,8 @@ class _EasyRefreshState extends State<EasyRefresh> {
         return Listener(
           onPointerUp: (event) {
             // 监听手指抬起时
-            if (widget.refresh != null) startRefresh(context);
-            if (widget.load != null) startLoad(context);
+            if (controller.offset < 0.0 && widget.refresh != null) startRefresh(context);
+            if (controller.offset > scrollMaxExtent && widget.load != null) startLoad(context);
           },
           child: NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification notification) {
@@ -138,9 +144,16 @@ class _EasyRefreshState extends State<EasyRefresh> {
                 // 保存最大滚动范围
                 scrollMaxExtent = notification.metrics.maxScrollExtent;
               } else if (notification is ScrollUpdateNotification) {
-                // 监听滑动中状态变化
-                if (widget.refresh != null) updateRefresh();
-                if (widget.load != null) updateLoad();
+                // 监听滑动距离
+                if (controller.offset < 0.0 && widget.refresh != null) {
+                  // 触发了下拉刷新
+                  updateRefresh();
+                  headerOffsetNotifier.value = controller.offset.abs();
+                }else if (controller.offset > scrollMaxExtent && widget.load != null) {
+                  // 触发了上拉加载
+                  updateLoad();
+                  footerOffsetNotifier.value = controller.offset-scrollMaxExtent;
+                }
               }
               return true;
             },
@@ -149,15 +162,13 @@ class _EasyRefreshState extends State<EasyRefresh> {
               controller: controller,
               slivers: [
                 EasyRefreshHeader(
-                  refreshState: refreshState,
-                  refreshExtent: widget.refreshExtent,
-                  child: widget.header != null
-                      ? widget.header(
-                          context,
-                          refreshState,
-                        )
-                      : null,
-                ),
+                    offsetNotifier: headerOffsetNotifier,
+                    refreshState: refreshState,
+                    refreshExtent: widget.refreshExtent,
+                    child: (context, offset) {
+                      if (widget.header != null) return widget.header(context, refreshState, offset);
+                      return SizedBox();
+                    }),
                 SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (BuildContext context, int index) {
@@ -170,15 +181,14 @@ class _EasyRefreshState extends State<EasyRefresh> {
                   ),
                 ),
                 EasyRefreshFooter(
-                  loadState: loadState,
-                  loadExtent: widget.loadExtent,
-                  child: widget.footer != null
-                      ? widget.footer(
-                          context,
-                          loadState,
-                        )
-                      : null,
-                ),
+                    scrollMaxExtent: scrollMaxExtent,
+                    offsetNotifier: footerOffsetNotifier,
+                    loadState: loadState,
+                    loadExtent: widget.loadExtent,
+                    child: (context, offset) {
+                      if (widget.footer != null) return widget.footer(context, loadState, offset);
+                      return SizedBox();
+                    }),
               ],
             ),
           ),
