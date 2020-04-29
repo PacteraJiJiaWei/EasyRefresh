@@ -119,6 +119,11 @@ class _EasyRefreshState extends State<EasyRefresh> {
     setState(() => loadState = LoadState.cancelLoad);
   }
 
+  /// 停止加载回调
+  stopLoadNoMore() {
+    setState(() => loadState = LoadState.noMore);
+  }
+
   /// 滑动时更新state调用
   updateLoad() {
     if (controller.offset < scrollMaxExtent + widget.loadExtent) {

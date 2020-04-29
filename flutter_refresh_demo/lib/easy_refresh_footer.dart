@@ -9,6 +9,7 @@ enum LoadState {
   willLoad,
   loading,
   cancelLoad,
+  noMore,
 }
 
 typedef EasyRefreshAnimationFooter = Widget Function(BuildContext context, double offset);
@@ -40,7 +41,7 @@ class _EasyRefreshFooterState extends State<EasyRefreshFooter> {
   @override
   Widget build(BuildContext context) {
     return _EasyRefreshSliverLoad(
-      load: widget.loadState == LoadState.loading,
+      load: widget.loadState == LoadState.loading || widget.loadState == LoadState.noMore,
       loadExtent: widget.loadExtent,
       child: LayoutBuilder(
         builder: (context, layout) {
@@ -77,14 +78,16 @@ class _EasyRefreshFooterState extends State<EasyRefreshFooter> {
                                 Text(
                                   widget.loadState == LoadState.loading
                                       ? '正在加载'
-                                      : widget.loadState == LoadState.willLoad ? '松手开始加载' : '上拉开始加载',
+                                      : widget.loadState == LoadState.noMore
+                                          ? '无更多内容'
+                                          : widget.loadState == LoadState.willLoad ? '松手开始加载' : '上拉开始加载',
                                   style: TextStyle(fontSize: 16.0, color: Colors.black),
                                 ),
                               ],
                             ),
                           );
                         } else {
-                          if (currentOffset != value) {
+                          if (currentOffset != value || widget.loadState == LoadState.noMore) {
                             currentOffset = value;
                             currentFooter = widget.child(context, value);
                           }
