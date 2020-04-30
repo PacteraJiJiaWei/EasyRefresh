@@ -61,9 +61,9 @@ class _EasyRefreshState extends State<EasyRefresh> {
   // 可滑动的最大距离
   double scrollMaxExtent = 0.0;
   // 下拉刷新state
-  RefreshState refreshState = RefreshState.cancelRefresh;
+  ValueNotifier<RefreshState> refreshStateNotifier;
   // 上拉加载state
-  LoadState loadState = LoadState.cancelLoad;
+  ValueNotifier<LoadState> loadStateNotifier;
   // header监听滑动距离
   ValueNotifier<double> headerOffsetNotifier;
   // footer监听滑动距离
@@ -72,6 +72,8 @@ class _EasyRefreshState extends State<EasyRefresh> {
   @override
   void initState() {
     controller = ScrollController();
+    refreshStateNotifier = ValueNotifier<RefreshState>(RefreshState.cancelRefresh);
+    loadStateNotifier = ValueNotifier<LoadState>(LoadState.cancelLoad);
     headerOffsetNotifier = ValueNotifier<double>(0.0);
     footerOffsetNotifier = ValueNotifier<double>(0.0);
     super.initState();
@@ -82,67 +84,70 @@ class _EasyRefreshState extends State<EasyRefresh> {
     if (controller != null) controller.dispose();
     if (headerOffsetNotifier != null) headerOffsetNotifier.dispose();
     if (footerOffsetNotifier != null) footerOffsetNotifier.dispose();
+    if (refreshStateNotifier != null) refreshStateNotifier.dispose();
+    if (loadStateNotifier != null) loadStateNotifier.dispose();
     super.dispose();
   }
 
   /// 手指离开屏幕时调用
   startRefresh(BuildContext context) {
-    if (refreshState == RefreshState.refreshing) return; // 防止多次点击
+    if (refreshStateNotifier.value == RefreshState.refreshing) return; // 防止多次点击
     if (controller.offset > -widget.refreshExtent) {
-      setState(() => refreshState = RefreshState.cancelRefresh);
+      refreshStateNotifier.value = RefreshState.cancelRefresh;
     } else {
-      setState(() => refreshState = RefreshState.refreshing);
+      refreshStateNotifier.value = RefreshState.refreshing;
       if (widget.refresh != null) widget.refresh(context);
     }
   }
 
   /// 停止刷新回调
   stopRefresh() {
-    setState(() => refreshState = RefreshState.cancelRefresh);
+    refreshStateNotifier.value = RefreshState.cancelRefresh;
   }
 
   /// 滑动时更新state调用
   updateRefresh() {
-    if (refreshState == RefreshState.refreshing) return; // 如果在刷新中不改变刷新状态
+    if (refreshStateNotifier.value == RefreshState.refreshing) return; // 如果在刷新中不改变刷新状态
     if (controller.offset > -widget.refreshExtent) {
-      if (refreshState == RefreshState.willRefresh) setState(() => refreshState = RefreshState.cancelRefresh);
+      if (refreshStateNotifier.value == RefreshState.willRefresh) refreshStateNotifier.value = RefreshState.cancelRefresh;
     } else {
-      if (refreshState == RefreshState.cancelRefresh) setState(() => refreshState = RefreshState.willRefresh);
+      if (refreshStateNotifier.value == RefreshState.cancelRefresh) refreshStateNotifier.value = RefreshState.willRefresh;
     }
   }
 
   /// 手指离开屏幕时调用
   startLoad(BuildContext context) {
-    if (loadState == LoadState.loading) return; // 防止多次点击
+    if (loadStateNotifier.value == LoadState.loading) return; // 防止多次点击
     if (controller.offset < scrollMaxExtent + widget.loadExtent) {
-      setState(() => loadState == LoadState.cancelLoad);
+      loadStateNotifier.value = LoadState.cancelLoad;
     } else {
-      setState(() => loadState = LoadState.loading);
+      loadStateNotifier.value = LoadState.loading;
       if (widget.load != null) widget.load(context);
     }
   }
 
   /// 停止加载回调
   stopLoad() {
-    setState(() => loadState = LoadState.cancelLoad);
+    loadStateNotifier.value = LoadState.cancelLoad;
   }
 
   /// 停止加载回调
   stopLoadNoMore() {
-    setState(() => loadState = LoadState.noMore);
+    loadStateNotifier.value = LoadState.noMore;
   }
 
   /// 滑动时更新state调用
   updateLoad() {
     if (controller.offset < scrollMaxExtent + widget.loadExtent) {
-      if (loadState == LoadState.willLoad) setState(() => loadState = LoadState.cancelLoad);
+      if (loadStateNotifier.value == LoadState.willLoad) loadStateNotifier.value = LoadState.cancelLoad;
     } else {
-      if (loadState == LoadState.cancelLoad) setState(() => loadState = LoadState.willLoad);
+      if (loadStateNotifier.value == LoadState.cancelLoad) loadStateNotifier.value = LoadState.willLoad;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    print('--------------refresh build了--------------');
     return Builder(
       builder: (context) {
         return Listener(
@@ -176,10 +181,10 @@ class _EasyRefreshState extends State<EasyRefresh> {
               slivers: [
                 EasyRefreshHeader(
                     offsetNotifier: headerOffsetNotifier,
-                    refreshState: refreshState,
+                    refreshStateNotifier: refreshStateNotifier,
                     refreshExtent: widget.refreshExtent,
                     child: (context, offset) {
-                      if (widget.header != null) return widget.header(context, refreshState, offset);
+                      if (widget.header != null) return widget.header(context, refreshStateNotifier.value, offset);
                       return SizedBox();
                     }),
                 SliverList(
@@ -196,10 +201,10 @@ class _EasyRefreshState extends State<EasyRefresh> {
                 EasyRefreshFooter(
                     scrollMaxExtent: scrollMaxExtent,
                     offsetNotifier: footerOffsetNotifier,
-                    loadState: loadState,
+                    loadStateNotifier: loadStateNotifier,
                     loadExtent: widget.loadExtent,
                     child: (context, offset) {
-                      if (widget.footer != null) return widget.footer(context, loadState, offset);
+                      if (widget.footer != null) return widget.footer(context, loadStateNotifier.value, offset);
                       return SizedBox();
                     }),
               ],

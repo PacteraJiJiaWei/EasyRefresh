@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -17,7 +15,7 @@ typedef EasyRefreshAnimationFooter = Widget Function(BuildContext context, doubl
 class EasyRefreshFooter extends StatefulWidget {
   final EasyRefreshAnimationFooter child;
   final double loadExtent;
-  final LoadState loadState;
+  final ValueNotifier<LoadState> loadStateNotifier;
   final ValueNotifier<double> offsetNotifier;
   final double scrollMaxExtent;
 
@@ -25,7 +23,7 @@ class EasyRefreshFooter extends StatefulWidget {
     Key key,
     this.child,
     this.loadExtent,
-    this.loadState,
+    this.loadStateNotifier,
     this.offsetNotifier,
     this.scrollMaxExtent,
   });
@@ -40,66 +38,71 @@ class _EasyRefreshFooterState extends State<EasyRefreshFooter> {
 
   @override
   Widget build(BuildContext context) {
-    return _EasyRefreshSliverLoad(
-      load: widget.loadState == LoadState.loading || widget.loadState == LoadState.noMore,
-      loadExtent: widget.loadExtent,
-      child: LayoutBuilder(
-        builder: (context, layout) {
-          return Container(
-            child: Stack(
-              children: <Widget>[
-                Positioned(
-                  top: 0.0,
-                  left: 0.0,
-                  right: 0.0,
-                  child: ValueListenableBuilder(
-                      valueListenable: widget.offsetNotifier,
-                      builder: (context, value, child) {
-                        if (currentFooter == null) currentFooter = widget.child(context, value);
-                        if (currentFooter is SizedBox) {
-                          return Container(
-                            height: widget.loadExtent,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: <Widget>[
-                                Padding(
-                                  padding: EdgeInsets.only(right: 10.0),
-                                  child: widget.loadState == LoadState.loading
-                                      ? CupertinoActivityIndicator(
-                                          radius: 12,
-                                        )
-                                      : Icon(
-                                          widget.loadState == LoadState.willLoad
-                                              ? Icons.arrow_downward
-                                              : Icons.arrow_upward,
-                                        ),
-                                ),
-                                Text(
-                                  widget.loadState == LoadState.loading
-                                      ? '正在加载'
-                                      : widget.loadState == LoadState.noMore
+    return ValueListenableBuilder(
+      valueListenable: widget.loadStateNotifier,
+      builder: (context, value, child) {
+        return _EasyRefreshSliverLoad(
+          load: widget.loadStateNotifier.value == LoadState.loading || widget.loadStateNotifier.value == LoadState.noMore,
+          loadExtent: widget.loadExtent,
+          child: Builder(
+            builder: (context) {
+              return Container(
+                child: Stack(
+                  children: <Widget>[
+                    Positioned(
+                      top: 0.0,
+                      left: 0.0,
+                      right: 0.0,
+                      child: ValueListenableBuilder(
+                          valueListenable: widget.offsetNotifier,
+                          builder: (context, value, child) {
+                            if (currentFooter == null) currentFooter = widget.child(context, value);
+                            if (currentFooter is SizedBox) {
+                              return Container(
+                                height: widget.loadExtent,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: <Widget>[
+                                    Padding(
+                                      padding: EdgeInsets.only(right: 10.0),
+                                      child: widget.loadStateNotifier.value == LoadState.loading
+                                          ? CupertinoActivityIndicator(
+                                        radius: 12,
+                                      )
+                                          : Icon(
+                                        widget.loadStateNotifier.value == LoadState.willLoad
+                                            ? Icons.arrow_downward
+                                            : Icons.arrow_upward,
+                                      ),
+                                    ),
+                                    Text(
+                                      widget.loadStateNotifier.value == LoadState.loading
+                                          ? '正在加载'
+                                          : widget.loadStateNotifier.value == LoadState.noMore
                                           ? '无更多内容'
-                                          : widget.loadState == LoadState.willLoad ? '松手开始加载' : '上拉开始加载',
-                                  style: TextStyle(fontSize: 16.0, color: Colors.black),
+                                          : widget.loadStateNotifier.value == LoadState.willLoad ? '松手开始加载' : '上拉开始加载',
+                                      style: TextStyle(fontSize: 16.0, color: Colors.black),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          );
-                        } else {
-                          if (currentOffset != value || widget.loadState == LoadState.noMore) {
-                            currentOffset = value;
-                            currentFooter = widget.child(context, value);
-                          }
-                          return currentFooter;
-                        }
-                      }),
-                )
-              ],
-            ),
-          );
-        },
-      ),
+                              );
+                            } else {
+                              if (currentOffset != value || widget.loadStateNotifier.value == LoadState.noMore) {
+                                currentOffset = value;
+                                currentFooter = widget.child(context, value);
+                              }
+                              return currentFooter;
+                            }
+                          }),
+                    )
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

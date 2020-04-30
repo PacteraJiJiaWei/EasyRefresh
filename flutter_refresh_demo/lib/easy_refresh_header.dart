@@ -15,14 +15,14 @@ typedef EasyRefreshAnimationHeader = Widget Function(BuildContext context, doubl
 class EasyRefreshHeader extends StatefulWidget {
   final EasyRefreshAnimationHeader child;
   final double refreshExtent;
-  final RefreshState refreshState;
+  final ValueNotifier<RefreshState> refreshStateNotifier;
   final ValueNotifier<double> offsetNotifier;
 
   EasyRefreshHeader({
     Key key,
     this.child,
     this.refreshExtent,
-    this.refreshState = RefreshState.cancelRefresh,
+    this.refreshStateNotifier,
     this.offsetNotifier,
   });
 
@@ -36,74 +36,79 @@ class _EasyRefreshHeaderState extends State<EasyRefreshHeader> {
 
   @override
   Widget build(BuildContext context) {
-    return _EasyRefreshSliverRefresh(
-      refresh: widget.refreshState == RefreshState.refreshing,
-      refreshExtent: widget.refreshExtent,
-      child: LayoutBuilder(
-        builder: (context, layout) {
-          return Container(
-            child: Stack(
-              children: <Widget>[
-                Positioned(
-                  bottom: 0.0,
-                  left: 0.0,
-                  right: 0.0,
-                  child: ValueListenableBuilder(
-                      valueListenable: widget.offsetNotifier,
-                      builder: (context, value, child) {
-                        if (currentHeader == null) currentHeader = widget.child(context, value);
-                        if (currentHeader is SizedBox) {
-                          return Container(
-                            height: widget.refreshExtent,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: <Widget>[
-                                Padding(
-                                  padding: EdgeInsets.only(right: 10.0),
-                                  child: widget.refreshState == RefreshState.refreshing
-                                      ? CupertinoActivityIndicator(
-                                    radius: 12,
-                                  )
-                                      : Icon(
-                                    widget.refreshState == RefreshState.willRefresh
-                                        ? Icons.arrow_upward
-                                        : Icons.arrow_downward,
-                                  ),
-                                ),
-                                Column(
+    return ValueListenableBuilder(
+      valueListenable: widget.refreshStateNotifier,
+      builder: (context, value, child) {
+        return _EasyRefreshSliverRefresh(
+          refresh: widget.refreshStateNotifier.value == RefreshState.refreshing,
+          refreshExtent: widget.refreshExtent,
+          child: Builder(
+            builder: (context) {
+              return Container(
+                child: Stack(
+                  children: <Widget>[
+                    Positioned(
+                      bottom: 0.0,
+                      left: 0.0,
+                      right: 0.0,
+                      child: ValueListenableBuilder(
+                          valueListenable: widget.offsetNotifier,
+                          builder: (context, value, child) {
+                            if (currentHeader == null) currentHeader = widget.child(context, value);
+                            if (currentHeader is SizedBox) {
+                              return Container(
+                                height: widget.refreshExtent,
+                                child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
                                   children: <Widget>[
-                                    Text(
-                                      widget.refreshState == RefreshState.refreshing
-                                          ? '正在刷新'
-                                          : widget.refreshState == RefreshState.willRefresh ? '松手开始刷新' : '下拉开始刷新',
-                                      style: TextStyle(fontSize: 16.0, color: Colors.black),
+                                    Padding(
+                                      padding: EdgeInsets.only(right: 10.0),
+                                      child: widget.refreshStateNotifier.value == RefreshState.refreshing
+                                          ? CupertinoActivityIndicator(
+                                        radius: 12,
+                                      )
+                                          : Icon(
+                                        widget.refreshStateNotifier.value == RefreshState.willRefresh
+                                            ? Icons.arrow_upward
+                                            : Icons.arrow_downward,
+                                      ),
                                     ),
-                                    Text(
-                                      'updateTime 9:00',
-                                      style: TextStyle(fontSize: 14.0, color: Colors.cyan),
+                                    Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        Text(
+                                          widget.refreshStateNotifier.value == RefreshState.refreshing
+                                              ? '正在刷新'
+                                              : widget.refreshStateNotifier.value == RefreshState.willRefresh ? '松手开始刷新' : '下拉开始刷新',
+                                          style: TextStyle(fontSize: 16.0, color: Colors.black),
+                                        ),
+                                        Text(
+                                          'updateTime 9:00',
+                                          style: TextStyle(fontSize: 14.0, color: Colors.cyan),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
-                          );
-                        } else {
-                          if (currentOffset != value) {
-                            currentOffset = value;
-                            currentHeader = widget.child(context, value);
-                          }
-                          return currentHeader;
-                        }
-                      }),
-                )
-              ],
-            ),
-          );
-        },
-      ),
+                              );
+                            } else {
+                              if (currentOffset != value) {
+                                currentOffset = value;
+                                currentHeader = widget.child(context, value);
+                              }
+                              return currentHeader;
+                            }
+                          }),
+                    )
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
