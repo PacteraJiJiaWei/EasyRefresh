@@ -149,7 +149,6 @@ class _EasyRefreshState extends State<EasyRefresh> {
 
   @override
   Widget build(BuildContext context) {
-    print('--------------refresh build了--------------');
     return Builder(
       builder: (context) {
         return Listener(
