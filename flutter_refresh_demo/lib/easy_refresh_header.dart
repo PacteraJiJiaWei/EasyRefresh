@@ -1,14 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'easy_refresh_config.dart';
+import 'easy_refresh_normal_header.dart';
 import 'dart:math';
-
-/// 刷新状态
-enum RefreshState {
-  willRefresh,
-  refreshing,
-  cancelRefresh,
-}
 
 typedef EasyRefreshAnimationHeader = Widget Function(BuildContext context, double offset);
 
@@ -56,42 +51,9 @@ class _EasyRefreshHeaderState extends State<EasyRefreshHeader> {
                           builder: (context, value, child) {
                             if (currentHeader == null) currentHeader = widget.child(context, value);
                             if (currentHeader is SizedBox) {
-                              return Container(
-                                height: widget.refreshExtent,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: <Widget>[
-                                    Padding(
-                                      padding: EdgeInsets.only(right: 10.0),
-                                      child: widget.refreshStateNotifier.value == RefreshState.refreshing
-                                          ? CupertinoActivityIndicator(
-                                        radius: 12,
-                                      )
-                                          : Icon(
-                                        widget.refreshStateNotifier.value == RefreshState.willRefresh
-                                            ? Icons.arrow_upward
-                                            : Icons.arrow_downward,
-                                      ),
-                                    ),
-                                    Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: <Widget>[
-                                        Text(
-                                          widget.refreshStateNotifier.value == RefreshState.refreshing
-                                              ? '正在刷新'
-                                              : widget.refreshStateNotifier.value == RefreshState.willRefresh ? '松手开始刷新' : '下拉开始刷新',
-                                          style: TextStyle(fontSize: 16.0, color: Colors.black),
-                                        ),
-                                        Text(
-                                          'updateTime 9:00',
-                                          style: TextStyle(fontSize: 14.0, color: Colors.cyan),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                              return EasyRefreshNormalHeader(
+                                refreshState: widget.refreshStateNotifier.value,
+                                offset: value,
                               );
                             } else {
                               if (currentOffset != value) {

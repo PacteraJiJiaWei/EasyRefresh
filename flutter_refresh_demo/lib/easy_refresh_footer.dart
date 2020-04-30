@@ -1,14 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-
-/// 加载状态
-enum LoadState {
-  willLoad,
-  loading,
-  cancelLoad,
-  noMore,
-}
+import 'easy_refresh_config.dart';
+import 'easy_refresh_normal_footer.dart';
 
 typedef EasyRefreshAnimationFooter = Widget Function(BuildContext context, double offset);
 
@@ -42,7 +36,8 @@ class _EasyRefreshFooterState extends State<EasyRefreshFooter> {
       valueListenable: widget.loadStateNotifier,
       builder: (context, value, child) {
         return _EasyRefreshSliverLoad(
-          load: widget.loadStateNotifier.value == LoadState.loading || widget.loadStateNotifier.value == LoadState.noMore,
+          load:
+              widget.loadStateNotifier.value == LoadState.loading || widget.loadStateNotifier.value == LoadState.noMore,
           loadExtent: widget.loadExtent,
           child: Builder(
             builder: (context) {
@@ -58,34 +53,9 @@ class _EasyRefreshFooterState extends State<EasyRefreshFooter> {
                           builder: (context, value, child) {
                             if (currentFooter == null) currentFooter = widget.child(context, value);
                             if (currentFooter is SizedBox) {
-                              return Container(
-                                height: widget.loadExtent,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: <Widget>[
-                                    Padding(
-                                      padding: EdgeInsets.only(right: 10.0),
-                                      child: widget.loadStateNotifier.value == LoadState.loading
-                                          ? CupertinoActivityIndicator(
-                                        radius: 12,
-                                      )
-                                          : Icon(
-                                        widget.loadStateNotifier.value == LoadState.willLoad
-                                            ? Icons.arrow_downward
-                                            : Icons.arrow_upward,
-                                      ),
-                                    ),
-                                    Text(
-                                      widget.loadStateNotifier.value == LoadState.loading
-                                          ? '正在加载'
-                                          : widget.loadStateNotifier.value == LoadState.noMore
-                                          ? '无更多内容'
-                                          : widget.loadStateNotifier.value == LoadState.willLoad ? '松手开始加载' : '上拉开始加载',
-                                      style: TextStyle(fontSize: 16.0, color: Colors.black),
-                                    ),
-                                  ],
-                                ),
+                              return EasyRefreshNormalFooter(
+                                loadState: widget.loadStateNotifier.value,
+                                offset: value,
                               );
                             } else {
                               if (currentOffset != value || widget.loadStateNotifier.value == LoadState.noMore) {

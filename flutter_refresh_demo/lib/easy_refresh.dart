@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'easy_refresh_footer.dart';
 import 'easy_refresh_header.dart';
-export 'easy_refresh_footer.dart';
-export 'easy_refresh_header.dart';
+import 'easy_refresh_config.dart';
+export 'easy_refresh_config.dart';
 
 typedef EasyRefreshCompere = Function(BuildContext context);
 typedef EasyRefreshHeaderItem = Widget Function(BuildContext context, RefreshState state, double offset);
@@ -109,15 +109,17 @@ class _EasyRefreshState extends State<EasyRefresh> {
   updateRefresh() {
     if (refreshStateNotifier.value == RefreshState.refreshing) return; // 如果在刷新中不改变刷新状态
     if (controller.offset > -widget.refreshExtent) {
-      if (refreshStateNotifier.value == RefreshState.willRefresh) refreshStateNotifier.value = RefreshState.cancelRefresh;
+      if (refreshStateNotifier.value == RefreshState.willRefresh)
+        refreshStateNotifier.value = RefreshState.cancelRefresh;
     } else {
-      if (refreshStateNotifier.value == RefreshState.cancelRefresh) refreshStateNotifier.value = RefreshState.willRefresh;
+      if (refreshStateNotifier.value == RefreshState.cancelRefresh)
+        refreshStateNotifier.value = RefreshState.willRefresh;
     }
   }
 
   /// 手指离开屏幕时调用
   startLoad(BuildContext context) {
-    if (loadStateNotifier.value == LoadState.loading) return; // 防止多次点击
+    if (loadStateNotifier.value == LoadState.loading || loadStateNotifier.value == LoadState.noMore) return; // 防止多次点击
     if (controller.offset < scrollMaxExtent + widget.loadExtent) {
       loadStateNotifier.value = LoadState.cancelLoad;
     } else {
@@ -167,10 +169,10 @@ class _EasyRefreshState extends State<EasyRefresh> {
                   // 触发了下拉刷新
                   updateRefresh();
                   headerOffsetNotifier.value = controller.offset.abs();
-                }else if (controller.offset > scrollMaxExtent && widget.load != null) {
+                } else if (controller.offset > scrollMaxExtent && widget.load != null) {
                   // 触发了上拉加载
                   updateLoad();
-                  footerOffsetNotifier.value = controller.offset-scrollMaxExtent;
+                  footerOffsetNotifier.value = controller.offset - scrollMaxExtent;
                 }
               }
               return true;

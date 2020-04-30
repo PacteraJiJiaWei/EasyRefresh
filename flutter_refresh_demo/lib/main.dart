@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -61,90 +60,6 @@ class MyApp extends StatelessWidget {
                           color: Colors.grey,
                           height: 2.0,
                         )
-                      ],
-                    ),
-                  );
-                },
-                footer: (context, loadState, offset) {
-                  return Container(
-                    height: 40.0,
-                    padding: EdgeInsets.only(top: 10.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        loadState == LoadState.noMore
-                            ? SizedBox()
-                            : Padding(
-                                padding: EdgeInsets.only(right: 10.0),
-                                child: loadState == LoadState.loading
-                                    ? CupertinoActivityIndicator(
-                                        radius: 12,
-                                      )
-                                    : SizedBox(
-                                        height: 20.0,
-                                        width: 20.0,
-                                        child: CircularProgressIndicator(
-                                          value: max(offset - 10.0, 0.0) / 30.0,
-                                          strokeWidth: 2.0,
-                                          backgroundColor: Colors.white,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
-                                        ),
-                                      ),
-                              ),
-                        Text(
-                          loadState == LoadState.loading
-                              ? '正在加载哦'
-                              : loadState == LoadState.noMore
-                                  ? '----------无更多内容----------'
-                                  : loadState == LoadState.willLoad ? '松手开始加载哦' : '上拉开始加载哦',
-                          style: TextStyle(fontSize: 14.0, color: Colors.black),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                header: (context, refreshState, offset) {
-                  return Container(
-                    height: 60.0,
-                    padding: EdgeInsets.only(top: 10.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: <Widget>[
-                        Padding(
-                          padding: EdgeInsets.only(right: 10.0),
-                          child: refreshState == RefreshState.refreshing
-                              ? CupertinoActivityIndicator(
-                                  radius: 12,
-                                )
-                              : SizedBox(
-                                  height: 20.0,
-                                  width: 20.0,
-                                  child: CircularProgressIndicator(
-                                    value: max(offset - 30.0, 0.0) / 30.0,
-                                    strokeWidth: 2.0,
-                                    backgroundColor: Colors.white,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
-                                  ),
-                                ),
-                        ),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text(
-                              refreshState == RefreshState.refreshing
-                                  ? '正在刷新哦'
-                                  : refreshState == RefreshState.willRefresh ? '松手开始刷新哦' : '下拉开始刷新哦',
-                              style: TextStyle(fontSize: 14.0, color: Colors.black),
-                            ),
-                            Text(
-                              'updateTime 9:00哦',
-                              style: TextStyle(fontSize: 12.0, color: Colors.cyan),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   );
